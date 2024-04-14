@@ -1,5 +1,8 @@
 package org.example.graph;
 
+/**
+ * Класс вершин
+ */
 public class Vertex {
     int vertNumber;
     int x;

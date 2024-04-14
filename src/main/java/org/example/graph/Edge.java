@@ -8,6 +8,16 @@ public class Edge {
     private Vertex source; // начальная вершина
     private Vertex destination; // конечная вершина
 
+    Edge() {
+
+    }
+
+    /**
+     * Конструктор вершины
+     * @param source - начальная вершина
+     * @param destination - конечная вершина
+     * @param weight - вес
+     */
     Edge(Vertex source, Vertex destination, int weight) {
         this.source = source;
         this.destination = destination;
