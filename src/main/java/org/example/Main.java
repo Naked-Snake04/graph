@@ -1,7 +1,6 @@
 package org.example;
 
 import org.example.graph.Graph;
-import org.example.graph.Vertex;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -12,23 +11,31 @@ public class Main {
         FileReader reader = new FileReader("src/main/resources/Taxicab_64.txt");
         Scanner scanner = new Scanner(reader);
 
-        int n; // количество вершин
+        int n = 0; // количество вершин
         n = Integer.parseInt(scanner.nextLine().replaceAll("\\D+", ""));
-
-        List<Vertex> vertices = new ArrayList<>(); // создаём множество вершин
-        int verticesNum = 1; // номер вершины (по тз начинается с 1)
+        int diameter = n / 16;
+        Map<Integer, List<Integer>> vertices = new HashMap<>();
+        int numVert = 0;
         while (scanner.hasNextLine()) {
             String[] coordinates = scanner.nextLine().replaceAll("\\D+", " ").split("\\D+");
             int x = Integer.parseInt(coordinates[0]);
             int y = Integer.parseInt(coordinates[1]);
-            Vertex vertex = new Vertex(verticesNum, x, y);
-            vertices.add(vertex); // добавляем во множество вершин
-            verticesNum++;
+            vertices.putIfAbsent(numVert, Arrays.asList(x, y));
+            numVert++;
         }
+
         scanner.close();
 
         Graph graph = new Graph(n);
-        graph.connectVertices(graph, vertices); // Соединяем все вершины со всеми
-        graph.printGraph();
+
+        vertices.forEach((key, value) -> {
+            for (int i = key + 1; i < vertices.size(); i++) {
+                int weight = Math.abs(vertices.get(key).getFirst() - vertices.get(i).getFirst()) +
+                        Math.abs(vertices.get(key).getLast() - vertices.get(i).getLast());
+                graph.addEdge(key, i, weight);
+            }
+        });
+
+        graph.reverseDeleteMST(diameter);
     }
 }

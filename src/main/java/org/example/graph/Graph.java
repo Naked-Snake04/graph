@@ -1,76 +1,74 @@
 package org.example.graph;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
 
 /**
  * Класс Граф
  */
 public class Graph {
-    private int verticesNum;
-    private final LinkedList<Edge> [] adjacencyVertices;
+    private final int verticesNum; // количество вершин
+    private final List<Integer>[] adj; // смежные вершины
+    private final List<Edge> edges; // рёбра
 
-    /**
-     * Конструктор Графа
-     * @param verticesNum количество вершин
-     */
     public Graph(int verticesNum) {
         this.verticesNum = verticesNum;
-        adjacencyVertices = new LinkedList[verticesNum];
+        adj = new ArrayList[verticesNum];
         for (int i = 0; i < verticesNum; i++) {
-            adjacencyVertices[i] = new LinkedList<>();
+            adj[i] = new ArrayList<Integer>();
+        }
+        edges = new ArrayList<Edge>();
+    }
+
+    public void addEdge(int u, int v, int w) {
+        adj[u].add(v);
+        adj[v].add(u);
+        edges.add(new Edge(u, v, w));
+    }
+
+    private void DFS(int v, boolean[] visited) {
+        // помечаем текущую вершину пройденной
+        visited[v] = true;
+
+        // рекурсивно проходим для всех вершин смежных с текущим
+        for (int i : adj[v]) {
+            if (!visited[i])
+                DFS(i, visited);
         }
     }
 
-    public int getVerticesNum() {
-        return verticesNum;
+    // проверка на связность графа
+    private boolean isConnected() {
+        boolean[] visited = new boolean[verticesNum];
+
+        // Находим все доступные вершины начиная с первой
+        DFS(0, visited);
+        // Если множество достижимых вершин включает все, возвращаем true
+        for (int i = 1; i < verticesNum; i++) {
+            if (!visited[i])
+                return false;
+        }
+        return true;
     }
 
-    public void setVerticesNum(int verticesNum) {
-        this.verticesNum = verticesNum;
-    }
+    public void reverseDeleteMST(int diameter) {
+        Collections.sort(edges);
+        int mstWeight = 0;
+        for (int i = edges.size() - 1; i >= 0; i--) {
+//            System.out.println(i);
+            int u = edges.get(i).u;
+            int v = edges.get(i).v;
 
-    /**
-     * Добавление ребра в граф
-     * @param source начальная вершина
-     * @param destination конечная вершина
-     * @param weight вес
-     */
-    public void addEdge(Vertex source, Vertex destination, int weight) {
-        Edge edge = new Edge(source, destination, weight);
-        adjacencyVertices[source.getVertNumber() - 1].add(edge);
-    }
+            adj[u].remove((Integer) v);
+            adj[v].remove((Integer) u);
 
-    /**
-     * Печать графа
-     */
-    public void printGraph() {
-        for (int i = 0; i < verticesNum ; i++) {
-            LinkedList<Edge> list = adjacencyVertices[i];
-            for (Edge edge : list) {
-                System.out.println("vertex-" + (i + 1) + " is connected to " +
-                        edge.getDestination().getVertNumber() + " with weight " + edge.getWeight());
+            if (!isConnected()) {
+                adj[u].add(v);
+                adj[v].add(u);
+                System.out.println("(" + (u + 1) + ", " + (v + 1)
+                        + ")");
+                mstWeight += edges.get(i).w;
             }
         }
-    }
-
-    /**
-     * Соединение вершин рёбрами
-     * @param graph граф
-     * @param vertices множество вершин
-     */
-    public void connectVertices(Graph graph, List<Vertex> vertices) {
-        vertices.forEach(vertex -> {
-            ListIterator<Vertex> vertexIterator = vertices.listIterator();
-            while (vertexIterator.hasNext()) {
-                Vertex vertexNext = vertexIterator.next();
-                int vertexIndex = vertexIterator.nextIndex();
-                if (vertexIndex == vertex.getVertNumber()) continue;
-                // формула расчёта веса |x-a|+|y-b|
-                int weight = Math.abs(vertex.getX() - vertexNext.getX()) + Math.abs(vertex.getY() - vertexNext.getY());
-                graph.addEdge(vertex, vertexNext, weight);
-            }
-        });
+        System.out.println(mstWeight);
     }
 }
