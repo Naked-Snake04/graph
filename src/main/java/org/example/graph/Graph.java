@@ -59,7 +59,6 @@ public class Graph {
         List<Edge> finalEdges = new ArrayList<>();
         int mstWeight = 0;
         for (int i = edges.size() - 1; i >= 0; i--) {
-//            System.out.println(i);
             int u = edges.get(i).getU();
             int v = edges.get(i).getV();
 
@@ -69,7 +68,6 @@ public class Graph {
                 adj[u].add(v);
                 adj[v].add(u);
                 resultEdges.add(new Edge(u, v, edges.get(i).getW()));
-                System.out.println("(" + u + ", " + v + ")");
                 mstWeight += edges.get(i).getW();
             }
         }
@@ -117,7 +115,6 @@ public class Graph {
             indexes.clear();
         }
         finalEdges = removeDuplicates(finalEdges);
-        System.out.println(mstWeight);
 
         try {
             FileWriter writer = new FileWriter("src/main/resources/result.txt");
