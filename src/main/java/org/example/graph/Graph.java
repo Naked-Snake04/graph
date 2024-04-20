@@ -71,7 +71,7 @@ public class Graph {
                 mstWeight += edges.get(i).getW();
             }
         }
-        System.out.println(mstWeight);
+
         // убираем ребра превышающие диаметр
         resultEdges.sort(Comparator.comparingInt(Edge::getU));
         LinkedList<Integer> list = new LinkedList<>();
@@ -122,7 +122,7 @@ public class Graph {
             writer.write("p edge " + countVertices(finalEdges) + " " + finalEdges.size() + "\n");
             finalEdges.forEach(edge -> {
                 try {
-                    writer.write("e " + edge.getU() + " " + edge.getV() + "\n");
+                    writer.write("e " + (edge.getU() + 1) + " " + (edge.getV() + 1) + "\n");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
