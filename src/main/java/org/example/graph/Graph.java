@@ -1,7 +1,8 @@
 package org.example.graph;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Класс Граф
@@ -16,9 +17,9 @@ public class Graph {
         this.verticesNum = verticesNum;
         adj = new ArrayList[verticesNum];
         for (int i = 0; i < verticesNum; i++) {
-            adj[i] = new ArrayList<Integer>();
+            adj[i] = new ArrayList<>();
         }
-        edges = new ArrayList<Edge>();
+        edges = new ArrayList<>();
     }
 
     public void addEdge(int u, int v, int w) {
@@ -54,8 +55,8 @@ public class Graph {
 
     public void reverseDeleteMST(int diameter) {
         Collections.sort(edges);
-        List<Edge> resultEdges = new ArrayList<Edge>();
-        HashSet<Edge> finalEdges = new HashSet<>();
+        List<Edge> resultEdges = new ArrayList<>();
+        List<Edge> finalEdges = new ArrayList<>();
         int mstWeight = 0;
         for (int i = edges.size() - 1; i >= 0; i--) {
 //            System.out.println(i);
@@ -86,14 +87,17 @@ public class Graph {
                 int v = resultEdges.get(finalI).getV();
             };
             list.add(ref.v);
+            finalEdges.add(new Edge(u, ref.v, 0));
             for (int j = i + 1; j < resultEdges.size(); j++) {
                 if (resultEdges.get(j).getU() == ref.v) {
                     list.add(resultEdges.get(j).getV());
                     indexes.add(resultEdges.indexOf(resultEdges.get(j)));
                     ref.v = resultEdges.get(j).getV();
+                    finalEdges.add(new Edge(resultEdges.get(j).getU(), ref.v, 0));
                 } else if (resultEdges.get(j).getV() == ref.v) {
                     list.add(resultEdges.get(j).getU());
                     indexes.add(resultEdges.indexOf(resultEdges.get(j)));
+                    finalEdges.add(new Edge( resultEdges.get(j).getU(), ref.v, 0));
                     ref.v = resultEdges.get(j).getU();
                 }
             }
@@ -102,17 +106,58 @@ public class Graph {
                 while (list.size() != diameter) {
                     mstWeight -= resultEdges.get(indexes.getFirst()).getW();
                     list.remove(list.getLast());
+                    if (finalEdges.size() > diameter)
+                        finalEdges.remove(finalEdges.getLast());
                     if (indexes.size() > diameter)
                         indexes.remove(indexes.getFirst());
                 }
             }
             indexes.sort(Integer::compareTo);
-            for (Integer index: indexes) {
-                finalEdges.add(resultEdges.get(index));
-            }
             list.clear();
             indexes.clear();
         }
+        finalEdges = removeDuplicates(finalEdges);
         System.out.println(mstWeight);
+
+        try {
+            FileWriter writer = new FileWriter("src/main/resources/result.txt");
+            writer.write("c Вес дерева = " + mstWeight + ", диаметр = " + diameter + "\n");
+            writer.write("p edge " + countVertices(finalEdges) + " " + finalEdges.size() + "\n");
+            finalEdges.forEach(edge -> {
+                try {
+                    writer.write("e " + edge.getU() + " " + edge.getV() + "\n");
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+            writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+    public static Integer countVertices (List<Edge> list) {
+        HashSet<Integer> vertexSet = new HashSet<>();
+
+        list.forEach(element -> {
+            vertexSet.add(element.getV());
+            vertexSet.add(element.getU());
+        });
+
+        return vertexSet.size();
+    }
+
+    public static ArrayList<Edge> removeDuplicates(List<Edge> list) {
+        HashSet<List<Integer>> uniqueSet = new HashSet<>();
+        ArrayList<Edge> newList = new ArrayList<>();
+
+        for (Edge element : list) {
+            if (uniqueSet.add(List.of(element.getU(), element.getV()))) {
+                newList.add(element);
+            }
+        }
+
+        return newList;
+    }
+
 }
