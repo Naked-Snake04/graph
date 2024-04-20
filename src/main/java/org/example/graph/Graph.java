@@ -1,7 +1,5 @@
 package org.example.graph;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -45,18 +43,61 @@ public class Graph {
 
         // Находим все доступные вершины начиная с первой
         DFS(0, visited);
-        // Если множество достижимых вершин включает все, возвращаем true
-        for (int i = 1; i < verticesNum; i++) {
+
+        // Если множество достижимых вершин не включает все, или диаметр больше заданного, возвращаем false
+        for (int i = 0; i < verticesNum; i++) {
             if (!visited[i])
                 return false;
         }
         return true;
     }
 
+    public int getDiameter() {
+        int diameter = 0;
+
+        // Перебираем все вершины для нахождения максимального пути от каждой вершины
+        for (int i = 0; i < verticesNum; i++) {
+            for (int j = i + 1; j < verticesNum; j++) {
+                int dist = findShortestPath(i, j);
+                if (dist > diameter) {
+                    diameter = dist;
+                }
+            }
+        }
+        return diameter;
+    }
+
+    private int findShortestPath(int source, int destination) {
+        // Initialize distances from source to all other vertices as INFINITE
+        int[] dist = new int[verticesNum];
+        Arrays.fill(dist, Integer.MAX_VALUE);
+        dist[source] = 0; // Distance from source to itself is always 0
+
+        // Create a priority queue to store vertices that are being preprocessed.
+        PriorityQueue<Integer> pq = new PriorityQueue<>(verticesNum, Comparator.comparingInt(o -> dist[o]));
+        pq.add(source);
+
+        while (!pq.isEmpty()) {
+            int u = pq.poll();
+
+            // Get all adjacent vertices of a vertex
+            for (int neighbor : adj[u]) {
+                // If there is a shorter path to neighbor through u
+                if (dist[u] + 1 < dist[neighbor]) {
+                    // Remove neighbor from pq if it is already there
+                    pq.remove(neighbor);
+                    // Updating distance of neighbor
+                    dist[neighbor] = dist[u] + 1;
+                    pq.add(neighbor);
+                }
+            }
+        }
+        return dist[destination];
+    }
+
     public void reverseDeleteMST(int diameter) {
         Collections.sort(edges);
         List<Edge> resultEdges = new ArrayList<>();
-        List<Edge> finalEdges = new ArrayList<>();
         int mstWeight = 0;
         for (int i = edges.size() - 1; i >= 0; i--) {
             int u = edges.get(i).getU();
@@ -71,90 +112,45 @@ public class Graph {
                 mstWeight += edges.get(i).getW();
             }
         }
-
-        // убираем ребра превышающие диаметр
-        resultEdges.sort(Comparator.comparingInt(Edge::getU));
-        LinkedList<Integer> list = new LinkedList<>();
-        ArrayList<Integer> indexes = new ArrayList<>();
-        for (int i = 0; i < resultEdges.size(); i++) {
-            int u = resultEdges.get(i).getU();
-            list.add(u);
-            indexes.add(resultEdges.indexOf(resultEdges.get(i)));
-            int finalI = i;
-            var ref = new Object() {
-                int v = resultEdges.get(finalI).getV();
-            };
-            list.add(ref.v);
-            finalEdges.add(new Edge(u, ref.v, 0));
-            for (int j = i + 1; j < resultEdges.size(); j++) {
-                if (resultEdges.get(j).getU() == ref.v) {
-                    list.add(resultEdges.get(j).getV());
-                    indexes.add(resultEdges.indexOf(resultEdges.get(j)));
-                    ref.v = resultEdges.get(j).getV();
-                    finalEdges.add(new Edge(resultEdges.get(j).getU(), ref.v, 0));
-                } else if (resultEdges.get(j).getV() == ref.v) {
-                    list.add(resultEdges.get(j).getU());
-                    indexes.add(resultEdges.indexOf(resultEdges.get(j)));
-                    finalEdges.add(new Edge( resultEdges.get(j).getU(), ref.v, 0));
-                    ref.v = resultEdges.get(j).getU();
-                }
-            }
-            indexes.sort(Collections.reverseOrder());
-            if (list.size() > diameter) {
-                while (list.size() != diameter) {
-                    mstWeight -= resultEdges.get(indexes.getFirst()).getW();
-                    list.remove(list.getLast());
-                    if (finalEdges.size() > diameter)
-                        finalEdges.remove(finalEdges.getLast());
-                    if (indexes.size() > diameter)
-                        indexes.remove(indexes.getFirst());
-                }
-            }
-            indexes.sort(Integer::compareTo);
-            list.clear();
-            indexes.clear();
-        }
-        finalEdges = removeDuplicates(finalEdges);
-
-        try {
-            FileWriter writer = new FileWriter("src/main/resources/result.txt");
-            writer.write("c Вес дерева = " + mstWeight + ", диаметр = " + diameter + "\n");
-            writer.write("p edge " + countVertices(finalEdges) + " " + finalEdges.size() + "\n");
-            finalEdges.forEach(edge -> {
-                try {
-                    writer.write("e " + (edge.getU() + 1) + " " + (edge.getV() + 1) + "\n");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-            writer.close();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        deleteEdgesUntilDiameter(diameter);
     }
 
-    public static Integer countVertices (List<Edge> list) {
-        HashSet<Integer> vertexSet = new HashSet<>();
+    public void deleteEdgesUntilDiameter(int targetDiameter) {
+        int mstWeight = 0;
+        int currentDiameter = getDiameter();
+        HashSet<Integer> vertex = new HashSet<>();
+        int countEdges = 0;
+        while (currentDiameter > targetDiameter) {
+            // Сортируем рёбра в порядке убывания их весов
+            Collections.sort(edges);
 
-        list.forEach(element -> {
-            vertexSet.add(element.getV());
-            vertexSet.add(element.getU());
-        });
+            // Удаляем рёбра, начиная с самых тяжелых
+            for (int i = edges.size() - 1; i >= 0; i--) {
+                Edge edgeToRemove = edges.get(i);
+                int u = edgeToRemove.getU();
+                int v = edgeToRemove.getV();
 
-        return vertexSet.size();
-    }
+                // Удаляем ребро из списка смежности
+                adj[u].remove((Integer) v);
+                adj[v].remove((Integer) u);
 
-    public static ArrayList<Edge> removeDuplicates(List<Edge> list) {
-        HashSet<List<Integer>> uniqueSet = new HashSet<>();
-        ArrayList<Edge> newList = new ArrayList<>();
-
-        for (Edge element : list) {
-            if (uniqueSet.add(List.of(element.getU(), element.getV()))) {
-                newList.add(element);
+                // Если после удаления ребра граф остается связным и его диаметр уменьшается, добавляем ребро в результат
+                if (isConnected() && getDiameter() < currentDiameter) {
+                    currentDiameter = getDiameter();
+                    mstWeight += edges.get(i).getW();
+                    countEdges++;
+                    vertex.add(u);
+                    vertex.add(v);
+                    System.out.println("e " + (u+1) + " " + (v+1));
+                    break; // Переходим к следующей итерации
+                } else {
+                    // Если удаление ребра приводит к разрыву связности или не уменьшает диаметр, восстанавливаем ребро
+                    adj[u].add(v);
+                    adj[v].add(u);
+                }
             }
         }
-
-        return newList;
+        System.out.println(vertex.size() + " " + countEdges);
+        System.out.println(mstWeight);
     }
-
 }
