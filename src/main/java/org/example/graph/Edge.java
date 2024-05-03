@@ -7,6 +7,7 @@ class Edge implements Comparable<Edge> {
     private int u;
     private int v;
     private int w;
+
     Edge(int u, int v, int w)
     {
         this.setU(u);

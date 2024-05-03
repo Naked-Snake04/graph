@@ -8,7 +8,7 @@ import java.util.*;
 
 public class Main {
     public static void main(String[] args) throws FileNotFoundException {
-        FileReader reader = new FileReader("src/main/resources/Taxicab_64.txt");
+        FileReader reader = new FileReader("src/main/resources/Taxicab_4096.txt");
         Scanner scanner = new Scanner(reader);
 
         int n = 0; // количество вершин
@@ -36,6 +36,6 @@ public class Main {
             }
         });
 
-        graph.reverseDeleteMST(diameter);
+        graph.findThreeEdgesTree();
     }
 }

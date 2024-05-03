@@ -7,70 +7,61 @@ import java.util.*;
  */
 public class Graph {
     private int verticesNum; // количество вершин
-    private List<Integer>[] adj; // смежные вершины
+    private List<List<Integer>> adjacencyList; // смежные вершины
     private List<Edge> edges; // рёбра
 
 
     public Graph(int verticesNum) {
         this.verticesNum = verticesNum;
-        adj = new ArrayList[verticesNum];
+        adjacencyList = new ArrayList<>(verticesNum);
         for (int i = 0; i < verticesNum; i++) {
-            adj[i] = new ArrayList<>();
+            adjacencyList.add(new ArrayList<>());
         }
         edges = new ArrayList<>();
     }
 
     public void addEdge(int u, int v, int w) {
-        adj[u].add(v);
-        adj[v].add(u);
         edges.add(new Edge(u, v, w));
+        edges.add(new Edge(v, u, w));
     }
 
-    private void DFS(int v, boolean[] visited) {
-        // помечаем текущую вершину пройденной
-        visited[v] = true;
+    private Edge findEdge(int u, int v) {
+        List<Edge> findEdges = edges.stream().filter(edge -> edge.getU() == u && edge.getV() == v).toList();
+        return findEdges.getFirst();
+    }
 
-        // рекурсивно проходим для всех вершин смежных с текущим
-        for (int i : adj[v]) {
-            if (!visited[i])
-                DFS(i, visited);
+    public void findThreeEdgesTree() {
+        List<Edge> result = new ArrayList<>();
+        for (int i = 0; i < verticesNum; i += 2) {
+            int v = (i + 1) % verticesNum;
+
+            Edge edge1 = findEdge(i, v);
+            Edge edge2 = findEdge(i, (i + 2) % verticesNum);
+            Edge edge3 = findEdge(v, (v + 2) % verticesNum);
+            result.add(edge1);
+            result.add(edge2);
+            result.add(edge3);
         }
-    }
-
-    // проверка на связность графа
-    private boolean isConnected() {
-        boolean[] visited = new boolean[verticesNum];
-
-        // Находим все доступные вершины начиная с первой
-        DFS(0, visited);
-
-        // Если множество достижимых вершин не включает все, или диаметр больше заданного, возвращаем false
-        for (int i = 0; i < verticesNum; i++) {
-            if (!visited[i])
-                return false;
-        }
-        return true;
-    }
-
-    public void reverseDeleteMST(int diameter) {
-        edges.sort(Comparator.comparingInt(Edge::getU));
-        List<Edge> resultEdges = new ArrayList<>();
-        int mstWeight = 0;
-        for (Edge edge : edges) {
-            int u = edge.getU();
-            int v = edge.getV();
-            int w = edge.getW();
-
-            adj[u].remove((Integer) v);
-            adj[v].remove((Integer) u);
-            if (!isConnected()) {
-                adj[u].add(v);
-                adj[v].add(u);
-                resultEdges.add(new Edge(u, v, w));
-                mstWeight += w;
-                System.out.println("e " + (u+1) + " " + (v+1));
+        var ref = new Object() {
+            int totalWeight = 0;
+            int maxWeight = Integer.MIN_VALUE;
+            int countEdges = 0;
+            int countVertex = 0;
+        };
+        HashSet<Integer> usedVertices = new HashSet<>();
+        result.forEach(edge -> {
+            System.out.println("e " + (edge.getU() + 1) + " " + (edge.getV() + 1));
+            ref.countEdges++;
+            if (usedVertices.add(edge.getU()))
+                ref.countVertex++;
+            ref.totalWeight += edge.getW();
+            if (edge.getW() > ref.maxWeight) {
+                ref.maxWeight = edge.getW();
             }
-        }
-        System.out.println(mstWeight);
+        });
+
+        System.out.println("c Вес кубического подграфа = " + ref.totalWeight
+                + ", самое длинное ребро = " + ref.maxWeight);
+        System.out.println("p edge " + ref.countVertex + " " + ref.countEdges);
     }
 }
